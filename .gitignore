@@ -1,0 +1,7 @@
+data/
+app/public/vendor
+app/public/vendor/composer.lock
+/dist
+.idea/
+.vscode/
+*.sw*

@@ -1,0 +1,97 @@
+services:
+    web:
+        image: nginx:1.19
+        ports:
+            - "81:80"
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./app:/app
+        networks:
+            - mongo-compose-network
+    php:
+        build:
+            context: .
+            dockerfile: PHP.DOCKERFILE
+        volumes:
+            - ./app:/app
+        networks:
+          - mongo-compose-network
+    node:
+        build:
+            context: .
+            dockerfile: NODE.DOCKERFILE
+        volumes:
+            - ./appnode:/app
+            -  /app/node_modules
+        networks:
+          - mongo-compose-network
+        ports: 
+          - 5000:5000
+        links:
+          - mongo-db        
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: pma
+        links:
+          - mysql
+        environment:
+          PMA_HOST: mysql
+          PMA_PORT: 3306
+          PMA_ARBITRARY: 1
+        restart: always
+        ports:
+          - 8085:80      
+        networks:
+          - mongo-compose-network    
+          
+    mysql:
+        image: mariadb:10.7.3
+        environment:
+            MYSQL_ROOT_PASSWORD: 'admin'
+            MYSQL_USER: 'admin'
+            MYSQL_PASSWORD: 'admin'
+            MYSQL_DATABASE: 'mydb'
+        volumes:
+            - mysqldata:/var/lib/mysql
+        ports:
+            - 3306:3306
+        networks:
+          - mongo-compose-network   
+          
+    mongo-express:
+        image: mongo-express
+        ports:
+          - 8081:8081
+        environment:
+          ME_CONFIG_MONGODB_SERVER: mongo-server
+          ME_CONFIG_BASICAUTH_USERNAME: admin
+          ME_CONFIG_BASICAUTH_PASSWORD: admin
+          ME_CONFIG_MONGODB_PORT: 27017
+          ME_CONFIG_MONGODB_ADMINUSERNAME: root
+          ME_CONFIG_MONGODB_ADMINPASSWORD: rootpassword
+        links:
+          - mongo-db
+        networks:
+          - mongo-compose-network
+
+    mongo-db:
+        image: mongo:latest
+        container_name: mongo-server
+        environment:
+          MONGO_INITDB_DATABASE: demodb  
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: rootpassword
+        ports:
+          - "27017:27017"
+        volumes:
+          - mongodb_data_container:/data/db
+        networks:
+          - mongo-compose-network
+
+networks: 
+    mongo-compose-network:
+      driver: bridge
+
+volumes:    
+    mysqldata: {}
+    mongodb_data_container:
